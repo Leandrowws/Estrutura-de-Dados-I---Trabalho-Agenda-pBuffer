@@ -159,10 +159,10 @@ int main() {
             case 5:
                 printf("\nSaindo...");
                 break;
-
         }
     }
 
+ free(pBuffer);
  return 0;
 
 }
