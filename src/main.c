@@ -1,28 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define TAM (sizeof(char) * 50 + sizeof(int) + sizeof(char) * 50)
+#define TAM_PESSOA (sizeof(char) * 50 + sizeof(int) + sizeof(char) * 50)
+#define TAM_BASE   (sizeof(char) * 50 + sizeof(int) * 3) 
 
 void *AdicionarPessoa( void *pBuffer ) {
 
     ((int *)pBuffer)[1]++;
-    void *pBufferRealocado = realloc(pBuffer, (sizeof(int)*3) + (sizeof(char)*50) + (((int *)pBuffer)[1] * TAM));
+    void *pBufferRealocado = realloc(pBuffer, TAM_BASE + (((int *)pBuffer)[1] * TAM_PESSOA));
 
     if ( pBufferRealocado == NULL ) {
         printf("Erro ao alocar memoria!\n");
         return pBuffer;
     }
 
-    char *nome = (char *)pBufferRealocado + (sizeof(int)*3) + (sizeof(char)*50) + ((((int *)pBufferRealocado)[1] - 1) * TAM);
+    char *nome = (char *)pBufferRealocado + TAM_BASE + ((((int *)pBufferRealocado)[1] - 1) * TAM_PESSOA);
     printf("Digite o seu nome: ");
     fgets(nome,50,stdin);
 
-    int *idade = (int *)((char *)pBufferRealocado + (sizeof(int)*3) + (sizeof(char)*50) + ((((int *)pBufferRealocado)[1] - 1) * TAM + sizeof(char) * 50));
+    int *idade = (int *)((char *)pBufferRealocado + TAM_BASE + ((((int *)pBufferRealocado)[1] - 1) * TAM_PESSOA + sizeof(char) * 50));
     printf("Digite a sua idade: ");
     scanf(" %d", idade);
     getchar();
 
-    char *email = (char *)pBufferRealocado + (sizeof(int)*3) + (sizeof(char)*50) + ((((int *)pBufferRealocado)[1] - 1) * TAM + sizeof(char) * 50 + sizeof(int));
+    char *email = (char *)pBufferRealocado + TAM_BASE + ((((int *)pBufferRealocado)[1] - 1) * TAM_PESSOA + sizeof(char) * 50 + sizeof(int));
     printf("Digite o seu email: ");
     fgets(email,50,stdin);
  
@@ -33,16 +34,16 @@ void ListarTodos(void *pBuffer) {
 
      ((int *)pBuffer)[2] = 0;
 
-     if( ((int *)pBuffer)[1] == 0 ) {
+     if ( ((int *)pBuffer)[1] == 0 ) {
         printf("\nAgenda vazia!\n");
         return;
      }
 
-     while( ((int *)pBuffer)[2] < ((int *)pBuffer)[1]) {
+     while( ((int *)pBuffer)[2] < ((int *)pBuffer)[1] ) {
 
-        char *pessoa = (char *)pBuffer + (sizeof(int)*3) + (sizeof(char)*50) + (((int *)pBuffer)[2] * TAM);
+        char *pessoa = (char *)pBuffer + TAM_BASE + (((int *)pBuffer)[2] * TAM_PESSOA);
         
-        char *nome = (char *)pessoa;
+        char *nome =  (char *)pessoa;
         int  *idade = (int *)(pessoa + sizeof(char)*50);
         char *email = (char *)pessoa + sizeof(char)*50 + sizeof(int);
 
@@ -59,7 +60,7 @@ void *BuscarPessoa(void *pBuffer) {
 
      ((int *)pBuffer)[2] = 0;
     
-     if( ((int *)pBuffer)[1] == 0 ) {
+     if ( ((int *)pBuffer)[1] == 0 ) {
         printf("\nAgenda vazia!\n");
         return NULL;
      }
@@ -68,13 +69,13 @@ void *BuscarPessoa(void *pBuffer) {
     char *busca = (char *)pBuffer + (sizeof(int)*3);
     fgets(busca,50,stdin);
 
-     while( ((int *)pBuffer)[2] < ((int *)pBuffer)[1]) {
+     while ( ((int *)pBuffer)[2] < ((int *)pBuffer)[1]) {
 
-        char *pessoa = (char *)pBuffer + (sizeof(int)*3) + (sizeof(char)*50) + (((int *)pBuffer)[2] * TAM);
+        char *pessoa = (char *)pBuffer + TAM_BASE + (((int *)pBuffer)[2] * TAM_PESSOA);
         
         char *nome = (char *)pessoa;
 
-        if(strcmp(busca,nome)==0) {
+        if ( strcmp(busca,nome)==0 ) {
 
             int  *idade = (int *)(pessoa + sizeof(char)*50);
             char *email = (char *)pessoa + sizeof(char)*50 + sizeof(int);
@@ -90,46 +91,52 @@ void *BuscarPessoa(void *pBuffer) {
         
         ((int *)pBuffer)[2]++;
      }
-     printf("\nPessoa nao foi encontrada!");
+     printf("\nEssa pessoa nao foi encontrada!\n");
      return NULL;
 }
 
 void *RemoverPessoa(void *pBuffer) {
 
-    void *remover = (char *)BuscarPessoa(pBuffer);
+    void *remover = BuscarPessoa(pBuffer);
 
-    if( remover == NULL ) {
+    if ( remover == NULL ) {
         return pBuffer;
     }
 
-    if( ((int *)pBuffer)[2] == ((int *)pBuffer)[1] - 1 ) {
+    ((int *)pBuffer)[1]--;
 
-        void *pBufferRealocado = realloc(pBuffer, (sizeof(int)*3) + (sizeof(char)*50) + (((int *)pBuffer)[1] * TAM));
-        if(pBufferRealocado == NULL) {
+    if( ((int *)pBuffer)[2] == ((int *)pBuffer)[1]) {
+
+        void *pBufferRealocado = realloc(pBuffer, TAM_BASE + (((int *)pBuffer)[1] * TAM_PESSOA));
+
+        if ( pBufferRealocado == NULL ) {
             return pBuffer;
         }
-        ((int *)pBuffer)[1]--;
+
+        
         printf("A PESSOA ACIMA FOI REMOVIDA COM SUCESSO!\n");
         return pBufferRealocado;
 
     } else {
-        memmove((char *)pBuffer + (sizeof(int)*3) + (sizeof(char)*50) + ((int *)pBuffer)[2] * TAM, (char *)pBuffer + (sizeof(int)*3) + (sizeof(char)*50) + ((int *)pBuffer)[2] * TAM + TAM, (((int *)pBuffer)[1] - ((int *)pBuffer)[2] - 1) * TAM);
-        void *pBufferRealocado = realloc(pBuffer, (sizeof(int)*3) + (sizeof(char)*50) + (((int *)pBuffer)[1] * TAM));
-        if(pBufferRealocado == NULL) {
+
+        void *destino = (char *)pBuffer + TAM_BASE + ((int *)pBuffer)[2] * TAM_PESSOA; 
+        void *origem =  (char *)destino + TAM_PESSOA;
+
+        memmove(destino, origem, (((int *)pBuffer)[1] - ((int *)pBuffer)[2]) * TAM_PESSOA);
+
+        void *pBufferRealocado = realloc(pBuffer, TAM_BASE + (((int *)pBuffer)[1] * TAM_PESSOA));
+        if ( pBufferRealocado == NULL ) {
             return pBuffer;
         }
-        ((int *)pBuffer)[1]--;
+        
         printf("A PESSOA ACIMA FOI REMOVIDA COM SUCESSO!\n");
         return pBufferRealocado;
     }
-
-
 }
 
-
 int main() {
-    
-    void *pBuffer = malloc(sizeof(int)*3 + sizeof(char) * 50);
+     
+    void *pBuffer = malloc( sizeof(int) * 3 + sizeof(char) * 50 );
 
     ((int *)pBuffer)[0] = 0;    //seletor de operação
     ((int *)pBuffer)[1] = 0;    //quantidade de pessoas
@@ -142,7 +149,7 @@ int main() {
         scanf("%d", &((int *)pBuffer)[0]);
         getchar();
 
-        switch(((int *)pBuffer)[0]) {
+        switch( ((int *)pBuffer)[0] ) {
 
             case 1:
                 pBuffer = AdicionarPessoa(pBuffer);
@@ -159,6 +166,7 @@ int main() {
             case 5:
                 printf("\nSaindo...");
                 break;
+
         }
     }
 
